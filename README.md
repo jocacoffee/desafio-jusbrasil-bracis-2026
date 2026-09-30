@@ -145,6 +145,12 @@ teste que achamos e corrigimos os 3 bugs descritos no commit
 - **O stress-test sintético é uma aproximação nossa do ruído real**, não
   uma cópia do gerador oficial (desconhecido) do desafio. Ele empilha
   transformações de forma mais agressiva do que o nível 2 observado, então
-  os números dele (recall ~86% no teste mais difícil vs. 100% no dev set)
+  os números dele (recall ~88% no teste mais difícil vs. 100% no dev set)
   devem ser lidos como um piso pessimista de robustez, não como a
-  expectativa real de desempenho no conjunto oculto.
+  expectativa real de desempenho no conjunto oculto. Investigando as
+  falhas restantes, a maioria vem do próprio gerador de ruído aplicando
+  troca de letra (principalmente "o"→"0") em palavras comuns do texto
+  ("do"→"d0", "Apelação"→"Apelaçã0"), não em identificadores — o que foge
+  do modelo de ruído documentado (concentrado em números/identificadores)
+  e infla artificialmente a taxa de falha; tratamos isso como limitação
+  do harness de teste, não do pipeline.
