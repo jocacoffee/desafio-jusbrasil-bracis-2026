@@ -93,6 +93,23 @@ def _is_own_header_number(text: str, start: int) -> bool:
     return bool(_OWN_HEADER_MARK_RE.search(window))
 
 
+# marcadores de identificadores NÃO-processuais que também têm 13+
+# dígitos (CNPJ tem 14) -- sem essa trava, o fallback de número CNJ sem
+# classe reconhecida (abaixo) capturaria um CNPJ/CPF/matrícula solto no
+# meio do texto como se fosse citação, só porque a contagem de dígitos
+# bate. Achado testando o próprio fallback contra texto sintético com
+# CNPJ antes de aceitar a mudança.
+_NAO_CITACAO_MARK_RE = re.compile(
+    r"\b(CNPJ|CPF|RG|CEP|Matr[íi]cula|Telefone|Fax|OAB)\.?\s*n?[ºo°.]?\s*$",
+    re.IGNORECASE,
+)
+
+
+def _is_non_citation_number(text: str, start: int) -> bool:
+    window = text[max(0, start - 25):start]
+    return bool(_NAO_CITACAO_MARK_RE.search(window))
+
+
 def find_jurisprudencia_candidates(text: str, full: bool = True) -> List[Candidate]:
     """`full=False` pula as etapas caras (casamento difuso de menções
     vagas) e as etapas irrelevantes (tema/relator+ano) usadas só na
@@ -154,15 +171,28 @@ def find_jurisprudencia_candidates(text: str, full: bool = True) -> List[Candida
                     if best is None or cm.start() < best.start():
                         best = cm
             if best is None:
-                # sem prefixo de classe reconhecido: não é citação --
-                # (evita capturar números soltos de qualquer natureza)
-                continue
-            span_start = pre_window_start + best.start()
-            # "TST-" à esquerda da cadeia de classes já reconhecida
-            # (ex.: "TST-E-RR-...", "TST- ED - E-ED-RR-...")
-            tst_m = pt.TST_LEAD_RE.search(pre_window[:best.start()])
-            if tst_m:
-                span_start = pre_window_start + tst_m.start()
+                if num_re is not pt.CNJ_NUM_RE or _is_non_citation_number(text, ns):
+                    # sem prefixo de classe reconhecido e (número fora do
+                    # formato CNJ padrão, ou é um CNPJ/CPF/matrícula solto
+                    # que por acaso também tem 13+ dígitos): risco de falso
+                    # positivo alto demais -- descarta, como sempre.
+                    continue
+                # número no formato CNJ padrão (13+ dígitos -- muito mais
+                # distintivo que um número solto de poucos dígitos) sem
+                # prefixo de classe reconhecido: aceita mesmo assim. Cobre
+                # citação a uma classe processual fora do vocabulário
+                # fechado de _CLASSE_ATOMS (o .db da avaliação final é
+                # outro e pode conter classes nunca vistas no dev set) --
+                # o formato do número por si só já é evidência forte o
+                # bastante para não depender do nome da classe.
+                span_start = ns
+            else:
+                span_start = pre_window_start + best.start()
+                # "TST-" à esquerda da cadeia de classes já reconhecida
+                # (ex.: "TST-E-RR-...", "TST- ED - E-ED-RR-...")
+                tst_m = pt.TST_LEAD_RE.search(pre_window[:best.start()])
+                if tst_m:
+                    span_start = pre_window_start + tst_m.start()
 
             span_end = ne
             uf_m = pt.UF_SUFFIX_RE.match(text[ne:ne + 12])

@@ -152,13 +152,37 @@ teste que achamos e corrigimos os 3 bugs descritos no commit
   incorreto com confiança alta — errar por omissão custa menos na métrica
   oficial do que errar afirmando uma classe errada com convicção.
 - **A cobertura de abreviação de classe processual é ampla, mas não
-  garantidamente exaustiva.** Foi checada contra os 26 documentos de dev
-  e ampliada por auditoria de vocabulário (conhecimento de domínio +
-  LLM local como fonte de candidatos, cada um verificado manualmente
-  antes de entrar), mas uma abreviação genuinamente nova e não prevista
-  no conjunto oculto ainda pode passar despercebida — é o risco residual
-  inerente a qualquer extração baseada em regex, não uma falha de
-  desenho.
+  garantidamente exaustiva.** Foi checada contra os 26 documentos de dev,
+  ampliada por auditoria de vocabulário (conhecimento de domínio + LLM
+  local como fonte de candidatos, cada um verificado manualmente antes de
+  entrar) e ampliada de novo por auditoria contra os 996 acórdãos + 5
+  súmulas + 13 dispositivos de toda a base canônica atual (não só o que é
+  citado nos 26 documentos de dev). Como o `.db` da avaliação final é
+  outro, `hunter/extract.py` tem também um fallback estrutural: um número
+  no formato CNJ padrão (13-20 dígitos, bem mais distintivo que um número
+  curto solto) é aceito como citação mesmo sem reconhecer o nome da
+  classe processual à sua frente — cobrindo uma classe genuinamente nova
+  no `.db` novo, tanto para extrair a citação quanto para indexar o
+  "número próprio" do acórdão correspondente na base. Testado em
+  `experiment/stress_test_novel_classes.py` com 9 classes reais
+  deliberadamente fora do vocabulário (ADI, ADPF, ADC, Mandado de
+  Injunção, Habeas Data, Conflito de Competência, Revisão Criminal,
+  Recurso de Reexame Necessário, Agravo de Execução): 9/9 de generalização
+  quando o número é formato CNJ, com um teste de falso positivo
+  específico para não confundir CNPJ/CPF/OAB (também têm 13+ dígitos)
+  com um número de processo. **Continua 0/9** para uma classe nova citada
+  no formato sequencial antigo (poucos dígitos) — não dá pra aceitar um
+  número curto sem nome de classe OU formato distintivo sem abrir uma
+  porta grande demais para falso positivo em qualquer número solto do
+  texto. Esse risco residual (classe nova + número no formato antigo)
+  fica documentado e aceito conscientemente, não escondido.
+  Tentei também pedir a uma LLM local (qwen3:8b) que sugerisse classes
+  processuais reais fora do vocabulário atual, para ampliar esse teste
+  além do que eu já sabia de cor — o resultado veio majoritariamente com
+  duplicatas triviais do que já estava coberto, mesmo com instrução
+  explícita para não repetir. Descartei a sugestão automática e curei a
+  lista de teste manualmente a partir de conhecimento de domínio
+  verificado.
 - **O stress-test sintético é uma aproximação nossa do ruído real**, não
   uma cópia do gerador oficial (desconhecido) do desafio. Ele empilha
   transformações de forma mais agressiva do que o nível 2 observado, então
