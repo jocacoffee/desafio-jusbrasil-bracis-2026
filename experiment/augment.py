@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Gera dados sintéticos para o experimento de detecção de "menção vaga"
-(ver plano em /Users/joaocoelho/.claude/plans/swift-painting-flamingo.md).
+Gera dados sintéticos para o experimento de detecção de "menção vaga".
 
 1. Paráfrases das ~15 frases-molde de menção vaga (hunter/patterns.py),
    geradas por google/gemma-4-e4b (servidor LM Studio local na rede do
