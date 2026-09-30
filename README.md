@@ -88,6 +88,16 @@ submissão (`documento_id,citacoes`), o mesmo enviado ao leaderboard do
 Kaggle. Execução determinística: mesma entrada produz sempre a mesma
 saída, em qualquer máquina — não há amostragem nem seed a fixar.
 
+### Tratamento de erros
+
+`.db`/pasta de entrada ausentes, ou uma pasta de saída sem permissão de
+escrita, param a execução com uma mensagem clara (não um traceback cru).
+Um documento individual que falhe por algum motivo inesperado **não**
+derruba a execução inteira: fica registrado um aviso em stderr e esse
+documento entra na saída com lista de citações vazia, os demais seguem
+normalmente. Um `.txt` que não seja UTF-8 válido é lido com substituição
+tolerante de caracteres em vez de interromper o processamento.
+
 ### Requisitos de hardware
 
 CPU apenas, sem GPU. ~26 documentos processam em segundos; o tempo
@@ -102,3 +112,39 @@ avaliação, obtido da aba Data do Kaggle) usando o `goldenset_offsets.csv`
 final: **F1 macro = 1,0000 nos dois níveis, score final 1,0993** (teto
 teórico da fórmula é 1,10000). Script de conferência local:
 `run_official_metric.py`.
+
+Além do dev set, `experiment/stress_test_noise.py` gera variantes
+sintéticas de ruído (troca de abreviação, reformatação de número, OCR
+letra-a-dígito, separador de UF, quebra de linha) sobre as 192 citações
+reais, empilhando mais ruído por citação do que o nível 2 real mostra —
+um teste deliberadamente mais difícil que o esperado. Foi rodando esse
+teste que achamos e corrigimos os 3 bugs descritos no commit
+`b71a5a3`/seguintes (2 bugs reais de regex, 1 tolerância a ruído nova).
+
+## Limitações conhecidas
+
+- **Uma letra de OCR ambígua não é recuperada de propósito.** Em nível 2
+  aparece ocasionalmente um "g"/"G" no lugar de um dígito (ex.:
+  `"R.Esp. n° 1.45g.779-MA"`, que resolve para `1.459.779` — "g"→9). Ao
+  contrário de 0↔O, 1↔l, 5↔S e m↔rn (pares com semelhança visual clara e
+  mapeamento único, documentados no PDF do desafio), essa letra não tem
+  correspondência visual óbvia com um único dígito, e um teste inicial
+  mostrou o mesmo caractere precisando mapear para dígitos diferentes em
+  citações distintas. Preferimos **não** adivinhar esse caso (deixando-o
+  como falso negativo/`inventada`) a arriscar devolver um `id_canonico`
+  incorreto com confiança alta — errar por omissão custa menos na métrica
+  oficial do que errar afirmando uma classe errada com convicção.
+- **A cobertura de abreviação de classe processual é ampla, mas não
+  garantidamente exaustiva.** Foi checada contra os 26 documentos de dev
+  e ampliada por auditoria de vocabulário (conhecimento de domínio +
+  LLM local como fonte de candidatos, cada um verificado manualmente
+  antes de entrar), mas uma abreviação genuinamente nova e não prevista
+  no conjunto oculto ainda pode passar despercebida — é o risco residual
+  inerente a qualquer extração baseada em regex, não uma falha de
+  desenho.
+- **O stress-test sintético é uma aproximação nossa do ruído real**, não
+  uma cópia do gerador oficial (desconhecido) do desafio. Ele empilha
+  transformações de forma mais agressiva do que o nível 2 observado, então
+  os números dele (recall ~86% no teste mais difícil vs. 100% no dev set)
+  devem ser lidos como um piso pessimista de robustez, não como a
+  expectativa real de desempenho no conjunto oculto.

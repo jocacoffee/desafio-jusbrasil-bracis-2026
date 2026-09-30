@@ -28,6 +28,13 @@ DB_PATH="$1"
 TXT_DIR="$2"
 OUT_FILE="$3"
 
+command -v python3 >/dev/null 2>&1 || { echo "ERRO: python3 não encontrado no PATH" >&2; exit 1; }
+[ -f "$DB_PATH" ] || { echo "ERRO: base canônica (.db) não encontrada: $DB_PATH" >&2; exit 1; }
+[ -d "$TXT_DIR" ] || { echo "ERRO: pasta de documentos não encontrada: $TXT_DIR" >&2; exit 1; }
+
+OUT_DIR="$(dirname "$OUT_FILE")"
+mkdir -p "$OUT_DIR" || { echo "ERRO: não foi possível criar a pasta de saída: $OUT_DIR" >&2; exit 1; }
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP_JSON_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_JSON_DIR"' EXIT
