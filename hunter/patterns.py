@@ -51,6 +51,13 @@ _CLASSE_ATOMS = [
     r"AgI/RR", r"AG\.I/RR",
     r"Terceiro AG\.?\s*REG",
     r"R-Rp", r"Recurso na Representa[cç][aã]o", r"Representa[cç][aã]o", r"RRep",
+    # achados pela auditoria contra os 996 acórdãos da base canônica
+    # (classes que existem no acervo mas nunca apareceram citadas nos 26
+    # documentos de petição -- sem isso, o número próprio desses
+    # registros nunca era indexado, então uma citação real a eles
+    # resolveria errado como "inventada")
+    r"A[cç][aã]o de Investiga[cç][aã]o Judicial Eleitoral", r"AIJE",
+    r"Conflito de Jurisdi[cç][aã]o",
 ]
 # átomos vindos de uma auditoria de cobertura (LLM local pedindo
 # abreviações oficiais/correntes por família, não usadas na extração de
