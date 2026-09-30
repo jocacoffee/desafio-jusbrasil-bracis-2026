@@ -256,7 +256,8 @@ def main():
     print(f"acurácia de link   = {link_ok_n}/{link_total} = {link_ok_n/link_total:.3f}" if link_total else "n/a")
 
     print(f"\nFalhas ({len(falhas)}):")
-    for f in falhas[:40]:
+    limite = int(sys.argv[2]) if len(sys.argv) > 2 else 40
+    for f in falhas[:limite]:
         print(" ", f)
 
 

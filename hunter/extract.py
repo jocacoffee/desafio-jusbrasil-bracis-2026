@@ -219,7 +219,7 @@ def find_lei_candidates(text: str) -> List[Candidate]:
         if any(m.start() < ce and m.end() > cs for cs, ce in claimed):
             continue
         claimed.append((m.start(), m.end()))
-        artigo_num = int(m.group(1).replace(".", ""))
+        artigo_num = int(digits_with_ocr_fix(m.group(1)))
         out.append(Candidate(m.start(), m.end(), m.group(), "lei", "artigo",
                               artigo_num=artigo_num, codigo_clause=m.group(2)))
 

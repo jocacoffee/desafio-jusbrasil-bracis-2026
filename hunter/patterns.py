@@ -173,8 +173,11 @@ CODIGO_SYNONYMS = {
 # nível 2 do desafio troca letras dentro do próprio nome do código
 # ("Constituição Fedcral", "Código de Processo Cívil" etc.) e uma
 # alternação exata de sinônimos (CODIGO_NAME_ALTERNATION) não cobre isso.
+# número do artigo em (?-i:...) por causa do mesmo problema já visto em
+# SUMULA_RE: sem escopo, IGNORECASE torna "I"/"S" no padrão case-insensitive
+# (casando "i"/"s" minúsculo de sobra) -- ver normalize.digits_with_ocr_fix.
 ARTIGO_RE = re.compile(
-    r"art(?:igo)?\.?\s*(\d{1,3}(?:\.\d{3})*)[º°o]?"
+    r"art(?:igo)?\.?\s*(?-i:([\dOoIlSs]{1,3}(?:\.[\dOoIlSs]{3})*))[º°o]?"
     r"(?:\s*[-,]\s*(?:§\s*\d+[º°o]?(?:-[A-Z])?|[IVXLC]+|['\"][a-zA-Z]['\"]))*"
     r"\s*(?:,\s*)?(?:d[oa]|de)\s+([^,.]{2,45})",
     re.IGNORECASE,
@@ -282,8 +285,13 @@ _DE = r"d[ce]"  # "de" com possível troca de OCR e->c
 # palavra minúscula (ex.: "... SILVA para sustentar"), o que só funciona
 # se maiúsculas ainda importarem nessa parte do padrão.
 RELATOR_ANO_RE = re.compile(
-    r"(?i:(?:julgado|precedente|ac[oó]rd[aã]o|Reclama[cç][aã]o|Recl\.?|Rcl|"
-    r"Agravo em Recurso Especial|Recurso em Habeas Corpus|APL)" + _SEP2 +
+    # reaproveita CLASSE_ATOM_RE (mesma família de abreviação usada na
+    # citação numérica) além dos gatilhos genéricos de prosa
+    # ("julgado", "precedente", "acórdão") -- sem isso, uma citação
+    # relator+ano cuja classe processual venha abreviada (ex.: "AREsp do
+    # STJ, de 2023..." em vez de "Agravo em Recurso Especial do STJ...")
+    # não era reconhecida como candidata a incompleta.
+    r"(?i:(?:julgado|precedente|ac[oó]rd[aã]o|" + CLASSE_ATOM_RE + r")" + _SEP2 +
     r"(?:d[oa]\s+(STF|STJ|TST|TSE|STM))?" + _SEP2 +
     r"(?:" + _DE + r"|prof[ec]rid[oa]\s*em|julgad[oa]\s*em)" + _SEP2 + r"(\d{4})" + _SEP2 +
     r"(?:d[oa]\s+(STF|STJ|TST|TSE|STM))?" + _SEP2 +
