@@ -44,12 +44,30 @@ hunter/
 run.py                    -- roda o pipeline sobre uma pasta de .txt
 json_to_submission.py     -- converte a saída em JSON para o CSV de submissão
 run.sh                     -- ponto de entrada único (ver "Como rodar")
+enrich_db.py                -- pré-processamento OPCIONAL (ver abaixo)
 ```
 
-Nenhum "enriquecimento" do `.db` é persistido em disco: `hunter/db.py`
-constrói os índices em memória a cada execução, a partir do `.db` no
-formato original. Não há etapa de pré-processamento separada a rodar
-antes — o mesmo comando de execução já cobre isso.
+### Enriquecimento do `.db` (opcional)
+
+`hunter/db.py` funciona direto sobre o `.db` no formato original, sem
+nenhum passo antes — mas calcular o "número próprio" de cada um dos
+~1.000 acórdãos varrendo regex sobre o texto inteiro custa **~26s por
+execução** (medido). Como esse cálculo não muda para o mesmo `.db`,
+`enrich_db.py` pré-computa uma vez e grava em 3 tabelas extras numa
+**cópia** do banco (nunca sobrescreve o original):
+
+```bash
+python3 enrich_db.py <db_original> <db_enriquecido>
+```
+
+`hunter/db.py` detecta essas tabelas automaticamente e usa o caminho
+rápido quando presentes (**~0,2s**, testado — mesmo resultado, índices
+byte-idênticos aos calculados em memória, verificado por asserção antes
+de aceitar o ganho). Sem o passo de enriquecimento, tudo funciona
+exatamente igual, só ~130x mais devagar na inicialização — por isso é
+opcional, não uma dependência: `run.sh`/`run.py` aceitam tanto o `.db`
+original quanto um `.db` enriquecido no mesmo argumento, sem nenhuma
+flag ou configuração extra.
 
 ### `experiment/` — validação da premissa "determinístico > aprendido"
 
@@ -100,10 +118,9 @@ tolerante de caracteres em vez de interromper o processamento.
 
 ### Requisitos de hardware
 
-CPU apenas, sem GPU. ~26 documentos processam em segundos; o tempo
-dominante é a indexação em memória dos ~1.000 registros da base canônica
-na inicialização (uma vez por execução), não o processamento por
-documento.
+CPU apenas, sem GPU. ~26 documentos processam em milissegundos; o tempo
+dominante é a indexação dos ~1.000 registros da base canônica na
+inicialização — ~26s sem enriquecimento, ~0,2s com (ver seção acima).
 
 ## Validação
 

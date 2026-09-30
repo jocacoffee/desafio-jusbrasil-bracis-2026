@@ -7,7 +7,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY hunter/ ./hunter/
-COPY run.py json_to_submission.py run.sh ./
+COPY run.py json_to_submission.py run.sh enrich_db.py ./
 RUN chmod +x run.sh
 
 ENTRYPOINT ["./run.sh"]
