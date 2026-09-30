@@ -1,0 +1,5 @@
+# Nenhuma dependência externa: o pipeline usa só a stdlib do Python
+# (sqlite3, re, json, csv, difflib, dataclasses). Não há treino nem
+# inferência de modelo -- é determinístico (regex + normalização +
+# consulta à base canônica), por isso roda em milissegundos por
+# documento e não se aproxima do limite de 32GB de RAM do desafio.

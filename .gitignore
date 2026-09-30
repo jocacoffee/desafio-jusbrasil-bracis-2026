@@ -1,0 +1,17 @@
+# dados fornecidos pela organização -- não versionados (a avaliação final
+# roda com um .db e uma pasta de .txt novos, fornecidos por eles)
+desafio1_bracis.db
+txt/
+backup_old_dataset/
+out/
+submission.csv
+sample_submission.csv
+
+# ambiente/artefatos locais (experiment/results/ fica versionado --
+# é o relatório do estudo comparativo baseline vs. ML vs. LLM)
+experiment/venv/
+experiment/data/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
