@@ -106,7 +106,7 @@ def find_jurisprudencia_candidates(text: str, full: bool = True) -> List[Candida
     claimed = []
     for m in pt.SUMULA_RE.finditer(text):
         vinculante = bool(m.group(1))
-        numero = int(m.group(2))
+        numero = int(digits_with_ocr_fix(m.group(2)))
         tribunal = m.group(3) or ("STF" if vinculante else None)
         out.append(Candidate(m.start(), m.end(), m.group(), "jurisprudencia", "sumula",
                               tribunal=tribunal, numero=numero))
@@ -132,9 +132,13 @@ def find_jurisprudencia_candidates(text: str, full: bool = True) -> List[Candida
             pre_window_start = max(0, ns - 80)
             pre_window = text[pre_window_start:ns]
             # remove iterativamente marcador "nº"/hífen solto colado no
-            # número (ex.: "RR-1835...", "ARR-213...", "RSE-1234...")
+            # número (ex.: "RR-1835...", "ARR-213...", "RSE-1234..."). O
+            # (?<![A-Za-zÀ-ÿ]) garante que o "n"/"N" é um marcador solto,
+            # não o fim de uma palavra comum -- sem essa guarda, "Agravo
+            # Interno" perdia o "no" final (interpretado como "n"+"o" do
+            # marcador) e virava "Agravo Inter", quebrando o átomo de classe.
             while True:
-                new_pw = re.sub(r"\s*[Nn][ºo°.]?\s*$", "", pre_window)
+                new_pw = re.sub(r"(?<![A-Za-zÀ-ÿ])\s*[Nn][ºo°.]?\s*$", "", pre_window)
                 new_pw = re.sub(r"\s*-\s*$", "", new_pw)
                 if new_pw == pre_window:
                     break

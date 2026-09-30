@@ -28,14 +28,14 @@ _CLASSE_ATOMS = [
     r"Agravo Interno", r"AgInt", r"AGINT", r"Ag\.?\s*Int\.?",
     r"Agravo em Recurso Especial", r"AREsp", r"ARESP", r"A\.?REsp",
     r"AgREsp", r"AGREsp",
-    r"Agravo em Recurso Extraordin[aá]rio", r"ARE",
+    r"Agravo em Recurso Extraordin[aá]rio", r"ARE", r"AgREx", r"AG\.REX",
     r"Agravo de Instrumento", r"AI", r"AgR-AI", r"AG\.?\s*INT",
     r"Agravo",
     r"Recurso Especial Eleitoral", r"REspe\.?", r"RESPE",
     r"AgR-REspe", r"AREspE[Il]",  # "I"/"l" -- confusão de OCR bem documentada
     r"Recurso Especial", r"REsp", r"RESP", r"R\.?\s*Esp\.?", r"Rec\.?\s*Esp\.?",
-    r"Recurso Extraordin[aá]rio", r"RE",
-    r"Recurso em Habeas Corpus", r"RHC",
+    r"Recurso Extraordin[aá]rio", r"RE", r"REX",
+    r"Recurso em Habeas Corpus", r"RHC", r"RHAB",
     r"Recurso Ordin[aá]rio", r"RO",
     r"Recurso de Revista", r"RR",
     r"Recurso em Mandado de Seguran[cç]a", r"RMS",
@@ -43,14 +43,22 @@ _CLASSE_ATOMS = [
     r"Apela[cç][aã]o", r"APL",
     r"Recurso em Sentido Estrito", r"RSE",
     r"Habeas Corpus", r"HC", r"H\.?C\.?",
-    r"A[cç][aã]o Rescis[oó]ria", r"AR",
+    r"A[cç][aã]o Rescis[oó]ria", r"AR", r"AC\.\s*RES\.?",
     r"Mandado de Seguran[cç]a", r"MS",
-    r"Suspens[aã]o de Liminar e de Senten[cç]a", r"SLS",
+    r"Suspens[aã]o de Liminar e de Senten[cç]a", r"SLS", r"SL",
     r"Ag\.?\s*Rg", r"AgARR", r"ARR",
     r"Agravo de Instrumento em Recurso de Revista", r"AIRR",
+    r"AgI/RR", r"AG\.I/RR",
     r"Terceiro AG\.?\s*REG",
-    r"R-Rp", r"Recurso na Representa[cç][aã]o", r"Representa[cç][aã]o",
+    r"R-Rp", r"Recurso na Representa[cç][aã]o", r"Representa[cç][aã]o", r"RRep",
 ]
+# átomos vindos de uma auditoria de cobertura (LLM local pedindo
+# abreviações oficiais/correntes por família, não usadas na extração de
+# conteúdo -- só vocabulário) contra os 26 documentos de dev, que não
+# necessariamente mostram todas as variantes de abreviação em uso real.
+# Cada um checado manualmente por plausibilidade antes de entrar; os que
+# pareciam genéricos demais (ex.: "Ap" para Apelação, "REE" p/ Especial
+# Eleitoral) ficaram de fora por risco de falso positivo.
 # ordena por tamanho decrescente para o regex preferir o token mais
 # específico/longo antes do mais curto (evita "RE" engolir "REsp").
 _CLASSE_ATOMS.sort(key=len, reverse=True)
@@ -119,13 +127,19 @@ UF_SUFFIX_RE = re.compile(
     r"\s*[/\-–—(]\s*([A-Z]{2})\s*\)?",
 )
 
-NUM_PREFIX_MARK_RE = re.compile(r"\s*[Nn][ºo°.]?\s*")
-
 # ---------------------------------------------------------------------
 # 3) Súmulas
 # ---------------------------------------------------------------------
+# tolera "m"->"rn" (par de OCR documentado no PDF) em "Súmula" e dígitos
+# do número escritos como letra confundível (0<->O, 1<->l, 5<->S) --
+# convertidos de volta em extract.py via normalize.digits_with_ocr_fix.
+# O grupo do número fica em (?-i:...): sem essa trava, o IGNORECASE do
+# resto do regex também vira as letras da classe [OoIlSs] case-insensitive
+# (então "I" no padrão passa a casar "i" minúsculo, "L" maiúsculo etc.),
+# o que caçava palavras comuns como "sumida"/"sumiu" (súm+i) por engano.
 SUMULA_RE = re.compile(
-    r"[S5]{1}[uú]m(?:ula)?\.?\s*(Vinculante)?\s*n?[ºo°.]?\s*(\d+)\s*(?:d[oa]\s*)?"
+    r"[S5]{1}[uú](?:m|rn)(?:ula)?\.?\s*(Vinculante)?\s*n?[ºo°.]?\s*"
+    r"(?-i:([\dOoIlSs]+))\s*(?:d[oa]\s*)?"
     r"(STF|STJ|TST|TSE|STM)?",
     re.IGNORECASE,
 )
